@@ -1,0 +1,63 @@
+# Ignore Python bytecode files
+__pycache__/
+*.py[cod]
+
+# Ignore environment files
+.env
+*.env
+
+# Ignore Docker-related files
+Dockerfile
+docker-compose.yml
+
+# Ignore logs
+*.log
+
+# Ignore compiled C extensions
+*.so
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore virtual environment directories
+venv/
+venv1/
+.venv/
+
+# Ignore any temporary files or directories
+tmp/
+temp/
+*.tmp
+
+# Ignore cache directories
+.cache/
+*.cache
+
+# Ignore coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Ignore test results
+junit-xml/
+test-results/
+
+# Ignore build directories
+build/
+dist/
+*.egg-info/
+
+# Ignore media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Ignore database files
+*.db
+*.sqlite3
+
+# Ignore celery worker files
+celerybeat-schedule
+celerybeat.pid
