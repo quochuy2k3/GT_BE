@@ -11,6 +11,7 @@ from routes.media import router as MediaRouter
 from routes.routine import router as RoutineRouter
 from routes.user import router as UserRouter
 from routes.couple import router as CoupleRouter
+from routes.gemini import router as GeminiRouter
 from service.routine_service import cron_notification, reset_sessions_status, mark_not_done
 from service.tracker_service import update_all_users_streaks
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -51,3 +52,4 @@ app.include_router(PredictRouter, tags=["Predict"], prefix="/v1/predict",depende
 app.include_router(TrackerRouter, tags=["Tracker"], prefix="/v1/tracker", dependencies=[Depends(token_listener)])
 app.include_router(RequestRouter, tags=["Request"], prefix="/v1/request", dependencies=[Depends(token_listener)])
 app.include_router(CoupleRouter, tags=["Couple"], prefix="/v1/couple", dependencies=[Depends(token_listener)])
+app.include_router(GeminiRouter, tags=["Gemini"], prefix="/v1/gemini", dependencies=[Depends(token_listener)])
