@@ -11,6 +11,7 @@ attrs==25.3.0
 bcrypt==4.3.0
 beanie==1.25.0
 billiard==4.2.1
+cachetools==5.5.2
 celery==5.5.2
 certifi==2024.2.2
 cffi==1.17.1
@@ -31,9 +32,18 @@ filelock==3.18.0
 fonttools==4.57.0
 frozenlist==1.5.0
 fsspec==2025.3.2
-google-generativeai==0.7.2
+google-ai-generativelanguage==0.6.15
+google-api-core==2.25.0rc1
+google-api-python-client==2.170.0
+google-auth==2.40.2
+google-auth-httplib2==0.2.0
+google-generativeai==0.8.5
+googleapis-common-protos==1.70.0
+grpcio==1.71.0
+grpcio-status==1.71.0
 h11==0.14.0
 httpcore==1.0.5
+httplib2==0.22.0
 httpx==0.27.0
 idna==3.7
 iniconfig==2.0.0
@@ -58,8 +68,13 @@ pillow==11.2.1
 pluggy==1.4.0
 prompt_toolkit==3.0.51
 propcache==0.3.1
+proto-plus==1.26.1
+prometheus-fastapi-instrumentator==7.0.0
+protobuf==5.29.4
 psutil==7.0.0
 py-cpuinfo==9.0.0
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
 pycparser==2.22
 pydantic==2.11.1
 pydantic-settings==2.8.1
@@ -76,6 +91,7 @@ pytz==2025.2
 PyYAML==6.0.2
 redis==5.2.1
 requests==2.32.3
+rsa==4.9.1
 scipy==1.15.2
 seaborn==0.13.2
 sentinels==1.0.0
@@ -95,6 +111,7 @@ tzdata==2025.2
 tzlocal==5.3.1
 ultralytics==8.3.111
 ultralytics-thop==2.0.14
+uritemplate==4.1.1
 urllib3==2.3.0
 uvicorn==0.29.0
 vine==5.1.0

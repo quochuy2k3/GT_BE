@@ -7,6 +7,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from passlib.context import CryptContext
+from monitoring.fastapi_metrics import increment_user_registration, increment_user_login
 
 from config.jwt_handler import sign_jwt, decode_jwt
 from database.database import add_user
@@ -127,6 +128,7 @@ async def sign_in(user_credentials: UserSignIn = Body(...)):
     if user_exists:
         password_valid = hash_helper.verify(user_credentials.password, user_exists.password)
         if password_valid:
+            increment_user_login()  # Increment login counter
             return sign_jwt(str(user_exists.id), user_exists.role, str(user_exists.email), user_exists.phone)
 
         raise HTTPException(status_code=403, detail="Incorrect password")
@@ -157,6 +159,7 @@ async def user_signup(user: UserSignUp = Body(...)):
     new_user = await add_user(dataUser)
     try:
         await create_routine_for_new_user(new_user.id)
+        increment_user_registration()  # Increment registration counter
         return sign_jwt(str(new_user.id), new_user.role, str(new_user.email), new_user.phone)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

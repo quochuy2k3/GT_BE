@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from beanie import PydanticObjectId
 from database.database import add_routine
-from models.routine import Day, Routine
+from models.routine import Day, Routine, Session, Step
 from database.celery_worker import celery_app
 from config.config import initiate_database
 
@@ -13,12 +13,49 @@ logger = logging.getLogger(__name__)
 
 async def create_routine_for_new_user(user_id: PydanticObjectId):
     logger.info(f"Creating routine for new user: {user_id}")
+    
+    morning_steps = [
+        Step(step_order=1, step_name="Sữa rửa mặt"),
+        Step(step_order=2, step_name="Toner"),
+        Step(step_order=3, step_name="Serum"),
+        Step(step_order=4, step_name="Kem dưỡng ẩm"),
+        Step(step_order=5, step_name="Kem chống nắng")
+    ]
+    
+    evening_steps = [
+        Step(step_order=1, step_name="Tẩy trang"),
+        Step(step_order=2, step_name="Sữa rửa mặt"),
+        Step(step_order=3, step_name="Toner"),
+        Step(step_order=4, step_name="Serum"),
+        Step(step_order=5, step_name="Kem dưỡng ẩm")
+    ]
+    
+    # Tạo 2 session cho mỗi ngày
+    morning_session = Session(
+        status="pending",
+        time="07:00 AM",
+        steps=morning_steps
+    )
+    
+    evening_session = Session(
+        status="pending", 
+        time="09:00 PM",
+        steps=evening_steps
+    )
+    
     all_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    routine_days = [Day(day_of_week=day, sessions=[]) for day in all_days]
+    
+    routine_days = []
+    for day in all_days:
+        day_obj = Day(
+            day_of_week=day,
+            sessions=[morning_session, evening_session]
+        )
+        routine_days.append(day_obj)
 
     routine = Routine(
         user_id=user_id,
-        routine_name="Default Routine",
+        routine_name="Quy Trình Chăm Sóc Da Cơ Bản",
         days=routine_days
     )
 

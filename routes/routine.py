@@ -2,7 +2,8 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import List
 from beanie import PydanticObjectId
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from monitoring.fastapi_metrics import increment_routine_completion
 from config.jwt_bearer import JWTBearer
 from config.jwt_handler import decode_jwt
 from models.routine import Routine, Day
@@ -63,6 +64,26 @@ async def test_routine():
 def parse_time_string(time_str: str) -> datetime:
     return datetime.strptime(time_str, "%I:%M %p")
 
+def is_past_time_utc7(time_str: str) -> bool:
+    """Check if the given time is in the past in UTC+7 timezone"""
+    try:
+        # Get current time in UTC+7
+        utc7_tz = timezone(timedelta(hours=7))
+        now_utc7 = datetime.now(utc7_tz)
+        
+        # Parse the session time and set it to today's date in UTC+7
+        session_time = datetime.strptime(time_str, "%I:%M %p")
+        today_session_time = now_utc7.replace(
+            hour=session_time.hour, 
+            minute=session_time.minute, 
+            second=0, 
+            microsecond=0
+        )
+        
+        return today_session_time < now_utc7
+    except:
+        return False
+
 @router.put("/update-day", response_model=DaySchema)
 async def update_sessions_for_day(
     updated_day: DaySchema = Body(...),
@@ -83,12 +104,79 @@ async def update_sessions_for_day(
 
     for day in routine.days:
         if day.day_of_week.lower() == updated_day.day_of_week.lower():
-            day.sessions = sorted(updated_day.sessions or [], key=lambda s: parse_time_string(s.time))
+            # Store old sessions for comparison
+            old_sessions = {session.time: session.status for session in day.sessions or []}
+            
+            # Process new sessions
+            processed_sessions = []
+            for new_session in updated_day.sessions or []:
+                # Priority 1: If request explicitly sends "done" status, keep it
+                if new_session.status == "done":
+                    # Keep the "done" status from request
+                    pass
+                # Priority 2: If session time exists in old sessions, preserve the old status
+                elif new_session.time in old_sessions:
+                    new_session.status = old_sessions[new_session.time]
+                # Priority 3: If this is a new session and the time is in the past, set status to "not_done"
+                elif is_past_time_utc7(new_session.time):
+                    new_session.status = "not_done"
+                # Priority 4: Otherwise keep the status from the new session data
+                
+                processed_sessions.append(new_session)
+                
+                # Debug log
+                print(f"Session {new_session.time}: final status = {new_session.status}")
+            
+            # Sort sessions by time and update
+            day.sessions = sorted(processed_sessions, key=lambda s: parse_time_string(s.time))
             await routine.save()
-            print(day)
+            print(f"Updated day: {day}")
             return day
 
     raise HTTPException(status_code=404, detail="Day not found in routine")
+
+def is_within_deadline_utc7(session_time_str: str) -> bool:
+    """Check if current time is within 1 hour after the session time in UTC+7 timezone"""
+    try:
+        utc7_tz = timezone(timedelta(hours=7))
+        now_utc7 = datetime.now(utc7_tz)
+        
+        session_time_str_normalized = session_time_str.upper()
+        
+        session_time = None
+        for time_format in ["%I:%M %p", "%H:%M"]:
+            try:
+                session_time = datetime.strptime(session_time_str_normalized, time_format)
+                break
+            except ValueError:
+                continue
+        
+        if session_time is None:
+            print(f"Could not parse time format: {session_time_str}")
+            return False
+        
+        # Set session time to today's date in UTC+7
+        today_session_time = now_utc7.replace(
+            hour=session_time.hour, 
+            minute=session_time.minute, 
+            second=0, 
+            microsecond=0
+        )
+        
+        # Calculate deadline (1 hour after session time)
+        deadline = today_session_time + timedelta(hours=1)
+        
+        # Debug logs
+        print(f"Current time (UTC+7): {now_utc7}")
+        print(f"Session time: {today_session_time}")
+        print(f"Deadline: {deadline}")
+        print(f"Is within deadline: {today_session_time <= now_utc7 <= deadline}")
+        
+        # Check if current time is between session time and deadline
+        return today_session_time <= now_utc7 <= deadline
+    except Exception as e:
+        print(f"Error in is_within_deadline_utc7: {e}")
+        return False
 
 @router.put("/session/mark-done", response_model=DaySchema)
 async def mark_session_done(
@@ -108,6 +196,20 @@ async def mark_session_done(
     if not routine:
         raise HTTPException(status_code=404, detail="Routine not found")
 
+    # Debug: Print the time being checked
+    print(f"Attempting to mark done - Day: {day_of_week}, Time: {time}")
+    
+    # Check if current time is within deadline (1 hour after session time)
+    # Temporarily disabled for debugging
+    if not is_within_deadline_utc7(time):
+        # For debugging, let's see what times we're working with but allow it anyway
+        print(f"WARNING: Outside deadline but allowing for debug - Time: {time}")
+        # Uncomment the line below to re-enable deadline checking
+        # raise HTTPException(
+        #     status_code=400, 
+        #     detail=f"Cannot mark session as done. Deadline has passed (1 hour after session time). Current session time: {time}"
+        # )
+
     for day in routine.days:
         if day.day_of_week.lower() == day_of_week.lower():
             for session in day.sessions:
@@ -115,9 +217,10 @@ async def mark_session_done(
                     if session.status != "done":
                         session.status = "done"
                         await routine.save()
+                        increment_routine_completion()  # Increment routine completion counter
                     return day
 
-    raise HTTPException(status_code=404, detail="Session not found")
+    raise HTTPException(status_code=404, detail=f"Session not found - Day: {day_of_week}, Time: {time}")
 
 def serialize_day(day: Day) -> dict:
     return {

@@ -3,6 +3,8 @@ from config.config import Settings, initiate_database
 from config.logging_config import setup_logging
 import asyncio
 
+# Celery metrics monitoring removed - focusing on FastAPI only
+
 setup_logging()  
 
 def make_celery():

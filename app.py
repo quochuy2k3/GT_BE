@@ -2,8 +2,10 @@ import asyncio
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Depends
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from config.jwt_bearer import JWTBearer
+from monitoring.fastapi_metrics import app_info
 from config.config import initiate_database
 from routes.admin import router as AdminRouter
 from routes.auth import router as AuthRouter
@@ -20,6 +22,10 @@ from routes.tracker import router as TrackerRouter
 from routes.request import router as RequestRouter
 app = FastAPI()
 token_listener = JWTBearer()
+
+# Initialize Prometheus metrics
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
 
 def start_scheduler():
     try:
