@@ -569,12 +569,11 @@ async def analyze_with_gemini(
         
         # Build safe prompt
         safe_prompt = build_enhanced_safe_prompt(
-            request_data.class_summary,  # Now optional
+            request_data.class_summary, 
             request_data.analysis_type or "default",
             request_data.custom_prompt
         )
         
-        # Print prompt being sent
         print("\n" + "="*80)
         print("📝 PROMPT SENT TO GEMINI:")
         print("="*80)
@@ -583,12 +582,10 @@ async def analyze_with_gemini(
         
         logger.info("Đang gửi yêu cầu tới Gemini API")
         
-        # Get AI response
         try:
             response = model.generate_content([safe_prompt, image_data])
             logger.info("Đã nhận phản hồi từ Gemini API")
             
-            # Print raw response from Gemini
             print("\n" + "="*80)
             print("🤖 GEMINI RAW RESPONSE:")
             print("="*80)
